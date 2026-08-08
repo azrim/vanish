@@ -1,19 +1,7 @@
-import { getSupabase } from '../_shared/supabase.js';
+import { supaSelect } from '../_shared/supabase.js';
 
-export async function onRequestGet(context) {
-  const supabase = getSupabase();
-  const { data, error } = await supabase
-    .from('domains')
-    .select('*')
-    .eq('is_active', true);
-
-  if (error) {
-    return new Response(JSON.stringify({ error: error.message }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' },
-    });
-  }
-
+export async function onRequestGet() {
+  const data = await supaSelect('domains', 'select=*&is_active=eq.true');
   return new Response(JSON.stringify(data), {
     headers: { 'Content-Type': 'application/json' },
   });

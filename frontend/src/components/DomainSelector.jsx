@@ -9,8 +9,8 @@ export default function DomainSelector({ value, onChange }) {
   }, []);
 
   return (
-    <select value={value} onChange={e => onChange(e.target.value)}>
-      <option value="">Pilih domain...</option>
+    <select className="domain-select" value={value} onChange={e => onChange(e.target.value)}>
+      <option value="">Choose a domain...</option>
       {domains.map(d => (
         <option key={d.id} value={d.domain}>{d.domain}</option>
       ))}

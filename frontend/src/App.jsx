@@ -15,8 +15,15 @@ export default function App() {
   return (
     <div className="app">
       <header className="header">
-        <h1>👻 Vanish</h1>
-        <p>Temporary emails that disappear. Generate. Read. Gone.</p>
+        <div className="logo">
+          <div className="logo-icon">✉</div>
+          <div>
+            <div className="logo-text">Vanish</div>
+            <div className="logo-sub">disposable inbox</div>
+          </div>
+        </div>
+        <h1>Temporary Email</h1>
+        <p>Instant disposable inbox. No signup needed.</p>
       </header>
 
       <GenerateEmail onGenerated={handleGenerated} />
@@ -26,6 +33,10 @@ export default function App() {
       ) : (
         <InboxList address={address} onSelect={setSelectedEmail} />
       )}
+
+      <div className="footer">
+        <p>Inboxes are automatically deleted after 24 hours</p>
+      </div>
     </div>
   );
 }

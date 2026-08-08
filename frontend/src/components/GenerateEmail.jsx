@@ -27,24 +27,45 @@ export default function GenerateEmail({ onGenerated }) {
     setTimeout(() => setCopied(false), 2000);
   };
 
+  const handleNew = () => {
+    setEmail('');
+    setCopied(false);
+  };
+
   return (
-    <div className="generator">
-      <div className="generator-row">
-        <DomainSelector value={domain} onChange={setDomain} />
-        {email ? (
-          <button className={`btn btn-copy ${copied ? 'copied' : ''}`} onClick={handleCopy}>
-            {copied ? '✓ Copied!' : email}
+    <div className="card">
+      {!email ? (
+        <>
+          <label style={{fontSize: '0.75rem', fontWeight: 600, color: '#8e8ea0', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'block', marginBottom: '8px'}}>
+            Select Domain
+          </label>
+          <DomainSelector value={domain} onChange={setDomain} />
+          <button
+            className="btn btn-primary"
+            onClick={handleGenerate}
+            disabled={!domain || loading}
+            style={{width: '100%', marginTop: '4px'}}
+          >
+            {loading ? '⏳' : '⚡'} Generate Email
           </button>
-        ) : (
-          <button className="btn btn-primary" onClick={handleGenerate} disabled={!domain || loading}>
-            {loading ? '⏳' : '⚡'} Generate
-          </button>
-        )}
-      </div>
-      {email && (
-        <div className="countdown">
-          Email ini akan hangus dalam 24 jam
-        </div>
+        </>
+      ) : (
+        <>
+          <label style={{fontSize: '0.75rem', fontWeight: 600, color: '#8e8ea0', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'block', marginBottom: '8px'}}>
+            Your Temporary Address
+          </label>
+          <div className="email-bar">
+            <span className="email-address">{email}</span>
+            <button className={`btn-copy-email ${copied ? 'copied' : ''}`} onClick={handleCopy} title="Copy">
+              {copied ? '✓' : '📋'}
+            </button>
+          </div>
+          <div className="action-row">
+            <button className="btn" onClick={handleNew}>
+              🔄 New address
+            </button>
+          </div>
+        </>
       )}
     </div>
   );

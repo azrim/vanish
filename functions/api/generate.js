@@ -1,43 +1,23 @@
-import { getSupabase } from '../_shared/supabase.js';
+import { supaInsert } from '../_shared/supabase.js';
 
-function randomString(len = 10) {
+function randomString(len = 12) {
   const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
-  let result = '';
-  for (let i = 0; i < len; i++) {
-    result += chars[Math.floor(Math.random() * chars.length)];
-  }
-  return result;
+  let r = '';
+  for (let i = 0; i < len; i++) r += chars[Math.floor(Math.random() * chars.length)];
+  return r;
 }
 
 export async function onRequestPost(context) {
-  const body = await context.request.json();
-  const { domain } = body;
-
+  const { domain } = await context.request.json();
   if (!domain) {
-    return new Response(JSON.stringify({ error: 'domain required' }), {
-      status: 400,
-      headers: { 'Content-Type': 'application/json' },
-    });
+    return new Response(JSON.stringify({ error: 'domain required' }), { status: 400 });
   }
 
-  const supabase = getSupabase();
-  const localPart = randomString(12);
+  const localPart = randomString();
   const address = `${localPart}@${domain}`;
 
-  const { data, error } = await supabase
-    .from('temp_addresses')
-    .insert({ address, domain, local_part })
-    .select()
-    .single();
-
-  if (error) {
-    return new Response(JSON.stringify({ error: error.message }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' },
-    });
-  }
-
-  return new Response(JSON.stringify(data), {
+  const data = await supaInsert('temp_addresses', { address, domain, local_part: localPart });
+  return new Response(JSON.stringify(data[0]), {
     headers: { 'Content-Type': 'application/json' },
   });
 }

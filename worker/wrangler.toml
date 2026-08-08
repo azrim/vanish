@@ -1,0 +1,7 @@
+name = "vanish-email"
+main = "index.js"
+compatibility_date = "2024-01-01"
+
+[vars]
+SUPABASE_URL = "https://fxmmiieaoajwpribvhfz.supabase.co"
+SUPABASE_KEY = "sb_publishable_HkqeNFSWDZoA1Rc2YuhG0g_MukfccdV"
