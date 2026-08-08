@@ -3,7 +3,7 @@
 import requests
 import time
 
-BASE = "https://vanish-746.pages.dev"
+BASE = "https://vanish.solvege.my.id"  # Custom subdomain
 
 class VanishMail:
     def __init__(self, base_url=BASE):
