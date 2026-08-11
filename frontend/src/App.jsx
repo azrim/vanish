@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import GenerateEmail from './components/GenerateEmail';
 import InboxList from './components/InboxList';
 import EmailViewer from './components/EmailViewer';
@@ -7,10 +7,10 @@ export default function App() {
   const [address, setAddress] = useState('');
   const [selectedEmail, setSelectedEmail] = useState(null);
 
-  const handleGenerated = (addr) => {
+  const handleGenerated = useCallback((addr) => {
     setAddress(addr);
     setSelectedEmail(null);
-  };
+  }, []);
 
   return (
     <div className="app">

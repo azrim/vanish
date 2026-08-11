@@ -1,31 +1,25 @@
-// Direct REST calls to Supabase — no SDK dependency
+// Minimal Supabase REST adapter used by Pages Functions.
 const URL = 'https://fxmmiieaoajwpribvhfz.supabase.co';
 const KEY = 'sb_publishable_HkqeNFSWDZoA1Rc2YuhG0g_MukfccdV';
 
-async function supaFetch(path, opts = {}) {
-  const url = `${URL}/rest/v1/${path}`;
-  const headers = {
-    'apikey': KEY,
-    'Authorization': `Bearer ${KEY}`,
-    'Content-Type': 'application/json',
-    'Prefer': opts.prefer || 'return=representation',
-    ...opts.headers,
-  };
-  const res = await fetch(url, { ...opts, headers });
-  if (!res.ok) {
-    const err = await res.text();
-    throw new Error(err);
-  }
-  return res.json();
-}
-
-export async function supaSelect(table, query = '') {
-  return supaFetch(`${table}?${query}`);
-}
-
-export async function supaInsert(table, data) {
-  return supaFetch(table, {
-    method: 'POST',
-    body: JSON.stringify(data),
+async function supaFetch(path, options = {}) {
+  const response = await fetch(`${URL}/rest/v1/${path}`, {
+    ...options,
+    headers: {
+      apikey: KEY,
+      Authorization: `Bearer ${KEY}`,
+      'Content-Type': 'application/json',
+      Prefer: options.prefer || 'return=representation',
+      ...options.headers,
+    },
   });
+
+  if (!response.ok) throw new Error(await response.text());
+  return response.status === 204 ? null : response.json();
 }
+
+export const supaSelect = (table, query = '') => supaFetch(`${table}?${query}`);
+export const supaInsert = (table, value) => supaFetch(table, {
+  method: 'POST',
+  body: JSON.stringify(value),
+});

@@ -1,123 +1,81 @@
-import { useState, useEffect } from 'react';
-import DomainSelector from './DomainSelector';
+import { useEffect, useState } from 'react';
 import { generateEmail, getDomains } from '../lib/api';
 
 export default function GenerateEmail({ onGenerated }) {
   const [domains, setDomains] = useState([]);
   const [domain, setDomain] = useState('');
   const [email, setEmail] = useState('');
+  const [prefix, setPrefix] = useState('');
   const [copied, setCopied] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [showCustom, setShowCustom] = useState(false);
-  const [customPrefix, setCustomPrefix] = useState('');
+  const [error, setError] = useState('');
+  const [customOpen, setCustomOpen] = useState(false);
 
-  // Auto-generate on mount
   useEffect(() => {
-    getDomains().then(async (data) => {
-      setDomains(data);
-      if (data.length > 0) {
-        const defaultDomain = data[0].domain;
-        setDomain(defaultDomain);
-        try {
-          const result = await generateEmail(defaultDomain);
-          setEmail(result.address);
-          onGenerated(result.address);
-        } catch (err) {
-          console.error(err);
-        }
-      }
-      setLoading(false);
-    });
-  }, []);
+    getDomains()
+      .then(async available => {
+        setDomains(available);
+        const first = available[0]?.domain;
+        if (!first) throw new Error('No domains available');
+        setDomain(first);
+        const created = await generateEmail(first);
+        setEmail(created.address);
+        onGenerated(created.address);
+      })
+      .catch(err => setError(err.message))
+      .finally(() => setLoading(false));
+  }, [onGenerated]);
 
-  const handleGenerate = async (selectedDomain) => {
+  async function create(localPart = '', selectedDomain = domain) {
     setLoading(true);
-    try {
-      const result = await generateEmail(selectedDomain || domain);
-      setEmail(result.address);
-      onGenerated(result.address);
-    } catch (err) {
-      console.error(err);
-    }
-    setLoading(false);
-  };
-
-  const handleNew = async () => {
+    setError('');
     setCopied(false);
-    setShowCustom(false);
-    setCustomPrefix('');
-    await handleGenerate(domain);
-  };
-
-  const handleCustomGenerate = async () => {
-    if (!customPrefix.trim()) return;
-    // For now, generate with selected domain (custom prefix needs backend support)
-    setShowCustom(false);
-    await handleGenerate(domain);
-  };
-
-  const handleDomainChange = async (newDomain) => {
-    setDomain(newDomain);
-    if (email) {
-      await handleGenerate(newDomain);
+    try {
+      const created = await generateEmail(selectedDomain, localPart);
+      setEmail(created.address);
+      setDomain(selectedDomain);
+      onGenerated(created.address);
+      setCustomOpen(false);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
     }
-  };
+  }
 
-  const handleCopy = () => {
+  function copy() {
     navigator.clipboard.writeText(email);
     setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
+    window.setTimeout(() => setCopied(false), 1500);
+  }
 
   return (
     <div className="card">
       <label className="field-label">Your Temporary Address</label>
-      
-      {loading && !email ? (
-        <div className="email-bar" style={{opacity: 0.7}}>
-          <span className="email-address">Generating...</span>
-        </div>
-      ) : (
+      {loading && !email ? <div className="email-bar"><span className="email-address">Generating…</span></div> : (
         <>
           <div className="email-bar">
             <span className="email-address">{email}</span>
-            <button className={`btn-copy-email ${copied ? 'copied' : ''}`} onClick={handleCopy} title="Copy">
-              {copied ? '✓' : '📋'}
-            </button>
+            <button className={`btn-copy-email ${copied ? 'copied' : ''}`} onClick={copy} aria-label="Copy email">{copied ? '✓' : '📋'}</button>
           </div>
-
           <div className="action-row">
-            <button className="btn" onClick={() => setShowCustom(!showCustom)}>
-              ✏️ Custom email
-            </button>
-            <button className="btn" onClick={handleNew} disabled={loading}>
-              {loading ? '⏳' : '🔄'} New address
-            </button>
+            <button className="btn" onClick={() => setCustomOpen(open => !open)}>✏️ Custom email</button>
+            <button className="btn" onClick={() => create()} disabled={loading}>🔄 New address</button>
           </div>
         </>
       )}
-
-      {showCustom && (
+      {customOpen && (
         <div className="custom-panel">
-          <select className="domain-select" value={domain} onChange={e => handleDomainChange(e.target.value)}>
-            {domains.map(d => (
-              <option key={d.id} value={d.domain}>{d.domain}</option>
-            ))}
+          <select className="domain-select" value={domain} onChange={event => setDomain(event.target.value)} aria-label="Email domain">
+            {domains.map(item => <option key={item.id} value={item.domain}>{item.domain}</option>)}
           </select>
           <div className="custom-row">
-            <input
-              type="text"
-              className="custom-input"
-              placeholder="Enter custom prefix..."
-              value={customPrefix}
-              onChange={e => setCustomPrefix(e.target.value)}
-            />
-            <button className="btn btn-primary" onClick={handleCustomGenerate} disabled={!customPrefix.trim()}>
-              Generate
-            </button>
+            <input className="custom-input" value={prefix} onChange={event => setPrefix(event.target.value.replace(/[^a-z0-9._+-]/gi, '').toLowerCase())} placeholder="your-prefix" aria-label="Email prefix" />
+            <button className="btn btn-primary" onClick={() => create(prefix)} disabled={!prefix || loading}>Use address</button>
           </div>
         </div>
       )}
+      {error && <p role="alert" className="form-error">{error}</p>}
     </div>
   );
 }

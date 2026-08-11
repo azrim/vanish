@@ -1,25 +1,17 @@
 const BASE = import.meta.env.VITE_API_URL || '';
 
-export async function getDomains() {
-  const res = await fetch(`${BASE}/api/domains`);
-  return res.json();
+async function request(path, options) {
+  const response = await fetch(`${BASE}${path}`, options);
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(data.error || 'Request failed');
+  return data;
 }
 
-export async function generateEmail(domain) {
-  const res = await fetch(`${BASE}/api/generate`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ domain }),
-  });
-  return res.json();
-}
-
-export async function getInbox(address) {
-  const res = await fetch(`${BASE}/api/inbox/${encodeURIComponent(address)}`);
-  return res.json();
-}
-
-export async function readEmail(id) {
-  const res = await fetch(`${BASE}/api/read/${id}`);
-  return res.json();
-}
+export const getDomains = () => request('/api/domains');
+export const generateEmail = (domain, localPart = '') => request('/api/generate', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({ domain, local_part: localPart }),
+});
+export const getInbox = address => request(`/api/inbox/${encodeURIComponent(address)}`);
+export const readEmail = id => request(`/api/read/${encodeURIComponent(id)}`);
