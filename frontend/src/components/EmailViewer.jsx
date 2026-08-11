@@ -1,26 +1,17 @@
+import { useEffect, useState } from 'react';
+import { readEmail } from '../lib/api';
+
 export default function EmailViewer({ email, onBack }) {
-  return (
-    <div className="viewer">
-      <div className="viewer-inner">
-        <button className="btn-back" onClick={onBack}>← Back to inbox</button>
-        <div className="viewer-header">
-          <h2>{email.subject}</h2>
-          <div className="viewer-meta">
-            <span>From: <strong>{email.from_addr}</strong></span>
-            <span>To: {email.to_addr || '—'}</span>
-            <span>{new Date(email.received_at).toLocaleString()}</span>
-          </div>
-        </div>
-        <div className="viewer-body">
-          {email.body_html ? (
-            <div dangerouslySetInnerHTML={{ __html: email.body_html }} />
-          ) : (
-            <pre style={{whiteSpace: 'pre-wrap', fontFamily: 'inherit'}}>
-              {email.body_text || '(empty)'}
-            </pre>
-          )}
-        </div>
-      </div>
-    </div>
-  );
+  const [fullEmail, setFullEmail] = useState(email);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    readEmail(email.id).then(setFullEmail).catch(() => {}).finally(() => setLoading(false));
+  }, [email.id]);
+
+  return <section className="reader-card" aria-labelledby="message-title">
+    <button className="back-button" onClick={onBack}>← Back to inbox</button>
+    <div className="reader-heading"><p className="card-kicker">MESSAGE</p><h2 id="message-title">{fullEmail.subject || '(no subject)'}</h2><div className="reader-meta"><span>From <strong>{fullEmail.from_addr}</strong></span><span>{new Date(fullEmail.received_at).toLocaleString()}</span></div></div>
+    {loading ? <div className="empty-state"><span className="loader" /><p>Opening message…</p></div> : <div className="reader-body">{fullEmail.body_text || '(empty message)'}</div>}
+  </section>;
 }

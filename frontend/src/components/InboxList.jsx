@@ -1,79 +1,42 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { getInbox } from '../lib/api';
 
 export default function InboxList({ address, onSelect }) {
   const [emails, setEmails] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
-  const fetchInbox = useCallback(async () => {
+  const refresh = useCallback(async () => {
     if (!address) return;
     try {
-      const data = await getInbox(address);
-      setEmails(data);
+      setError('');
+      setEmails(await getInbox(address));
     } catch (err) {
-      console.error(err);
+      setError(err.message);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   }, [address]);
 
   useEffect(() => {
-    fetchInbox();
-    const interval = setInterval(fetchInbox, 5000);
-    return () => clearInterval(interval);
-  }, [fetchInbox]);
+    setLoading(true);
+    refresh();
+    const timer = window.setInterval(refresh, 5000);
+    return () => window.clearInterval(timer);
+  }, [refresh]);
 
-  if (!address) {
-    return (
-      <div className="card">
-        <div className="inbox-header">
-          <div className="inbox-title">Inbox</div>
-        </div>
-        <div className="empty-state">
-          <div className="icon">📬</div>
-          <div className="title">Generate an email to start</div>
-          <div className="subtitle">Choose a domain and generate your temporary address</div>
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="card inbox-card">
-      <div className="inbox-header">
-        <div className="inbox-title">
-          Inbox
-          <div className="inbox-status">
-            <span className="dot"></span>
-            Active
-          </div>
-        </div>
-        <button className="btn-refresh" onClick={fetchInbox} title="Refresh">🔄</button>
-      </div>
-
-      {!loading && emails.length === 0 ? (
-        <div className="empty-state">
-          <div className="icon">✉️</div>
-          <div className="title">Waiting for emails</div>
-          <div className="subtitle">Emails sent to your address will appear here</div>
-        </div>
-      ) : loading ? (
-        <div className="loading">
-          <div className="spinner"></div>
-          Loading...
-        </div>
-      ) : (
-        <div className="email-list">
-          {emails.map(email => (
-            <div key={email.id} className="email-item" onClick={() => onSelect(email)}>
-              <div>
-                <div className="from">{email.from_addr}</div>
-                <div className="subject">{email.subject}</div>
-              </div>
-              <div className="time">{new Date(email.received_at).toLocaleTimeString()}</div>
-            </div>
-          ))}
-        </div>
-      )}
+  return <section className="inbox-card" aria-labelledby="inbox-title">
+    <div className="inbox-heading">
+      <div><div className="inbox-title-row"><h2 id="inbox-title">Inbox</h2><span className="live-pill"><span className="status-dot" />Live</span></div><p className="inbox-address">{address || 'Create an address to activate your inbox'}</p></div>
+      <button className="icon-button" onClick={refresh} aria-label="Refresh inbox" title="Refresh inbox">↻</button>
     </div>
-  );
+
+    {loading ? <div className="empty-state"><span className="loader" /><p>Checking your inbox…</p></div> : error ? <div className="empty-state"><span className="empty-icon">!</span><p>{error}</p><button className="text-button" onClick={refresh}>Try again</button></div> : emails.length === 0 ? <div className="empty-state"><span className="empty-icon">✉</span><h3>Waiting for emails</h3><p>Emails sent to this address will appear here automatically.</p></div> : <div className="message-list">
+      {emails.map(email => <button className="message-row" key={email.id} onClick={() => onSelect(email)}>
+        <span className="message-avatar">{(email.from_addr || '?')[0].toUpperCase()}</span>
+        <span className="message-copy"><strong>{email.from_addr}</strong><span>{email.subject || '(no subject)'}</span></span>
+        <time dateTime={email.received_at}>{new Date(email.received_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</time>
+      </button>)}
+    </div>}
+  </section>;
 }
