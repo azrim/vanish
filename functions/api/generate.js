@@ -25,17 +25,14 @@ export async function onRequestPost(context) {
     for (let attempt = 0; attempt < MAX_TRIES; attempt += 1) {
       const localPart = requested || randomPart();
       const address = `${localPart}@${domain}`;
-      const existing = await supaSelect('temp_addresses', `select=id&address=eq.${encodeURIComponent(address)}&limit=1`);
+      const existing = await supaSelect('temp_addresses', `select=id,address,domain,local_part,created_at,expires_at&address=eq.${encodeURIComponent(address)}&limit=1`);
+
       if (existing.length) {
-        if (requested) return error('That address is already taken', 409);
-        continue;
+        if (requested) return json(existing[0], 200); // Return existing if custom prefix
+        continue; // Try another random
       }
 
-      const created = await supaInsert('temp_addresses', {
-        address,
-        domain,
-        local_part: localPart,
-      });
+      const created = await supaInsert('temp_addresses', { address, domain, local_part: localPart });
       return json(created[0], 201);
     }
 
